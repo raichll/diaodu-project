@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>调度中心数据中台</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">DC</div>
+          <div>
+            <h1>数据中台</h1>
+            <p>调度中心接入平台</p>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="主导航">
+          <button class="nav-item is-active" type="button" data-panel="ingest">数据接入</button>
+          <button class="nav-item" type="button" data-panel="records">数据台账</button>
+          <button class="nav-item" type="button" data-panel="api">接口规范</button>
+        </nav>
+
+        <div class="connection">
+          <span id="apiDot" class="dot"></span>
+          <span id="apiStatus">正在连接</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Vercel + Supabase</p>
+            <h2>调度中心数据接入与治理平台</h2>
+          </div>
+          <div class="top-actions">
+            <button id="refreshRecords" class="secondary-button" type="button">刷新</button>
+            <button id="exportCsv" class="primary-button" type="button">导出 CSV</button>
+          </div>
+        </header>
+
+        <section class="summary-grid">
+          <article class="summary-card">
+            <span>接入总量</span>
+            <strong id="totalCount">0</strong>
+            <small>全部来源记录</small>
+          </article>
+          <article class="summary-card">
+            <span>今日新增</span>
+            <strong id="todayCount">0</strong>
+            <small>按提交时间统计</small>
+          </article>
+          <article class="summary-card">
+            <span>源系统</span>
+            <strong id="sourceCount">0</strong>
+            <small>已上报系统数</small>
+          </article>
+          <article class="summary-card">
+            <span>待处理</span>
+            <strong id="pendingCount">0</strong>
+            <small>进入中台队列</small>
+          </article>
+        </section>
+
+        <section id="ingest" class="panel-view is-active">
+          <div class="grid two-one">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>新增接入数据</h3>
+                  <p>源系统、事件类型、位置与状态统一入库</p>
+                </div>
+              </div>
+
+              <form id="recordForm" class="record-form">
+                <label>
+                  <span>源系统</span>
+                  <select id="sourceSystem" required></select>
+                </label>
+                <label>
+                  <span>事件类型</span>
+                  <input id="eventType" type="text" value="视频AI告警" required>
+                </label>
+                <label class="wide">
+                  <span>事件标题</span>
+                  <input id="title" type="text" value="疑似烟雾异常告警" required>
+                </label>
+                <label class="wide">
+                  <span>事件描述</span>
+                  <textarea id="description" rows="4">高空视频识别到疑似烟雾，请调度人员复核并派发处置。</textarea>
+                </label>
+                <label>
+                  <span>点位/位置</span>
+                  <input id="location" type="text" value="高空视频点位 A-013">
+                </label>
+                <label>
+                  <span>所属区域</span>
+                  <input id="region" type="text" value="锦江区">
+                </label>
+                <label>
+                  <span>等级</span>
+                  <select id="severity">
+                    <option value="一般">一般</option>
+                    <option value="较重">较重</option>
+                    <option value="严重">严重</option>
+                    <option value="紧急">紧急</option>
+                  </select>
+                </label>
+                <label>
+                  <span>状态</span>
+                  <select id="status">
+                    <option value="待处理">待处理</option>
+                    <option value="处理中">处理中</option>
+                    <option value="已推送">已推送</option>
+                    <option value="已归档">已归档</option>
+                  </select>
+                </label>
+                <button class="primary-button wide" type="submit">提交到数据中台</button>
+              </form>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>CSV 批量接入</h3>
+                  <p>字段名与 Supabase 表结构保持一致</p>
+                </div>
+              </div>
+
+              <div class="upload-box">
+                <input id="csvInput" type="file" accept=".csv,text/csv">
+                <button id="importCsv" class="secondary-button" type="button">导入 CSV</button>
+              </div>
+
+              <div class="source-list" id="sourceList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="records" class="panel-view">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>数据台账</h3>
+                <p>按源系统、关键词和时间查看中台数据</p>
+              </div>
+            </div>
+
+            <div class="filters">
+              <input id="searchInput" type="search" placeholder="搜索标题、描述、点位">
+              <select id="filterSource"></select>
+              <select id="filterStatus">
+                <option value="">全部状态</option>
+                <option value="待处理">待处理</option>
+                <option value="处理中">处理中</option>
+                <option value="已推送">已推送</option>
+                <option value="已归档">已归档</option>
+              </select>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>提交时间</th>
+                    <th>源系统</th>
+                    <th>事件</th>
+                    <th>区域</th>
+                    <th>等级</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody id="recordRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="api" class="panel-view">
+          <div class="grid">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>外部系统提交接口</h3>
+                  <p>10 个业务系统可直接向 Vercel API 写入数据</p>
+                </div>
+              </div>
+              <pre class="code-block"><code>POST https://你的域名.vercel.app/api/records
+Content-Type: application/json
+
+{
+  "source_system": "高空视频系统",
+  "event_type": "视频AI告警",
+  "title": "疑似烟雾异常告警",
+  "description": "高空视频识别到疑似烟雾",
+  "location": "高空视频点位 A-013",
+  "region": "锦江区",
+  "severity": "较重",
+  "status": "待处理"
+}</code></pre>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>数据查询接口</h3>
+                  <p>页面和管理端共用同一套查询接口</p>
+                </div>
+              </div>
+              <pre class="code-block"><code>GET /api/records?limit=200
+GET /api/records?q=烟雾
+GET /api/records?source_system=高空视频系统
+
+返回：Supabase dispatch_records 表中的标准记录</code></pre>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "vercel-supabase-data-center",
+  "version": "1.0.0",
+  "private": true,
+  "description": "调度中心数据中台：Vercel 前端与 API，Supabase 数据存储。",
+  "scripts": {
+    "preview": "python -m http.server 8790",
+    "deploy": "vercel --prod"
+  },
+  "license": "UNLICENSED"
+}
