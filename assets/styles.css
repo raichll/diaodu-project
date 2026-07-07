@@ -402,6 +402,137 @@ td {
   background: #ffe4e2;
 }
 
+.record-cards {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.record-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.record-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.record-card h4 {
+  margin: 6px 0;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.record-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.source-name {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.meta-grid span {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf9;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.meta-grid strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink);
+}
+
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.evidence-item {
+  min-height: 118px;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf9;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.evidence-item.image img {
+  width: 100%;
+  height: 118px;
+  object-fit: cover;
+  background: #edf2ef;
+}
+
+.evidence-item.image span {
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.evidence-item.video {
+  align-content: center;
+  gap: 8px;
+  padding: 12px;
+}
+
+.video-mark {
+  width: 48px;
+  min-height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e3f5ef;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.evidence-item.video small {
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.evidence-empty,
+.empty-state {
+  padding: 18px;
+  border: 1px dashed #b9c7c1;
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--muted);
+}
+
 .code-block {
   margin: 0;
   padding: 14px;

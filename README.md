@@ -134,3 +134,16 @@ http://127.0.0.1:8790/
 ```
 
 本地没有 Vercel API 和 Supabase 环境变量时，页面会自动使用本地演示数据。
+
+## 证据中台升级
+
+当前页面已经升级为“问题线索 + 图片/视频证据中台”：
+
+- 页面入口脚本：`assets/evidence_app.js`
+- 外部系统仍然提交到：`/api/records`
+- 支持字段：`image_urls`、`video_urls`、`review_status`、`dispatch_status`
+- 图片和视频证据会先存入 `dispatch_records.payload`
+- 可选独立证据表：`supabase/evidence_schema.sql`
+- 详细对接说明：`docs/evidence_integration.md`
+
+这个设计不会破坏你已经创建好的 `dispatch_records` 表；先可以用于演示和初步对接。正式运行时，建议再增加文件存储、登录权限和人工审核后推送统一调度平台的接口。

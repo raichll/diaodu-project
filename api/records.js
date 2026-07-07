@@ -8,7 +8,7 @@ function applyCors(req, res) {
   res.setHeader("Access-Control-Allow-Origin", responseOrigin);
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-API-Key");
 }
 
 function json(res, status, payload) {
@@ -81,6 +81,68 @@ function supabaseHeaders(key, extra = {}) {
   };
 }
 
+function firstValue(input, keys, fallback = "") {
+  for (const key of keys) {
+    if (input[key] !== undefined && input[key] !== null && String(input[key]).trim() !== "") {
+      return input[key];
+    }
+  }
+  return fallback;
+}
+
+function listValue(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  return String(value)
+    .split(/\r?\n|,|\|/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeRecordV2(input) {
+  const now = new Date().toISOString();
+  const payload = typeof input.payload === "object" && input.payload !== null ? { ...input.payload } : {};
+  const imageUrls = listValue(firstValue(input, ["image_urls", "imageUrls", "image_url", "imageUrl", "images", "screenshots", "snapshot_urls"]));
+  const videoUrls = listValue(firstValue(input, ["video_urls", "videoUrls", "video_url", "videoUrl", "videos", "clip_urls", "stream_urls"]));
+  const evidence = [];
+
+  imageUrls.forEach((url, index) => evidence.push({ type: "image", url, label: `图片证据 ${index + 1}` }));
+  videoUrls.forEach((url, index) => evidence.push({ type: "video", url, label: `视频证据 ${index + 1}` }));
+  if (Array.isArray(input.evidence)) {
+    input.evidence.forEach((item) => {
+      if (item && item.url) {
+        evidence.push({
+          type: cleanText(item.type, "file"),
+          url: String(item.url).trim(),
+          label: cleanText(item.label || item.name, "证据材料")
+        });
+      }
+    });
+  }
+
+  const reviewStatus = cleanText(firstValue(input, ["review_status", "reviewStatus", "audit_status", "auditStatus"]), "待人工审核");
+  const dispatchStatus = cleanText(firstValue(input, ["dispatch_status", "dispatchStatus", "push_status", "pushStatus"]), "未推送");
+  payload.image_urls = imageUrls;
+  payload.video_urls = videoUrls;
+  payload.evidence = evidence;
+  payload.review_status = reviewStatus;
+  payload.dispatch_status = dispatchStatus;
+  payload.raw = input;
+
+  return {
+    source_system: cleanText(firstValue(input, ["source_system", "sourceSystem", "system", "platform", "source_name"]), "未命名系统"),
+    event_type: cleanText(firstValue(input, ["event_type", "eventType", "type", "alarm_type", "problem_type"]), "未分类线索"),
+    title: cleanText(firstValue(input, ["title", "name", "event_title", "alarm_title"]), "未命名线索"),
+    description: cleanText(firstValue(input, ["description", "detail", "content", "remark", "message"])),
+    location: cleanText(firstValue(input, ["location", "point_name", "pointName", "site_name", "siteName", "address", "company_name"])),
+    region: cleanText(firstValue(input, ["region", "district", "area", "street", "county"])),
+    severity: cleanText(firstValue(input, ["severity", "level", "grade"]), "一般"),
+    status: cleanText(firstValue(input, ["status", "state", "process_status"]), reviewStatus),
+    event_time: firstValue(input, ["event_time", "eventTime", "alarm_time", "alarmTime", "monitor_time", "create_time"], now),
+    payload
+  };
+}
+
 async function handleGet(req, res, cfg) {
   const currentUrl = new URL(req.url, "http://localhost");
   const target = new URL(`${cfg.supabaseUrl}/rest/v1/${TABLE_NAME}`);
@@ -120,7 +182,7 @@ async function handlePost(req, res, cfg) {
     return json(res, 400, { error: "每次提交数量必须在 1 到 500 条之间" });
   }
 
-  const records = inputRecords.map(normalizeRecord);
+  const records = inputRecords.map(normalizeRecordV2);
   const response = await fetch(`${cfg.supabaseUrl}/rest/v1/${TABLE_NAME}?select=*`, {
     method: "POST",
     headers: supabaseHeaders(cfg.supabaseKey, {
